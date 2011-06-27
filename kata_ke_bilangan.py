@@ -87,8 +87,8 @@ BilanganRibuan = [
     ("lima ratus ribu", 500000),
     ("enam ratus ribu", 600000),
     ("tujuh ratus ribu", 700000),
-    ("delapan ratus ribu", 700000),
-    ("sembilan ratus ribu", 700000),
+    ("delapan ratus ribu", 800000),
+    ("sembilan ratus ribu", 900000),
 ]
 ribuan = Or([makeLiteral(str, val) for str, val in BilanganRibuan])
 
