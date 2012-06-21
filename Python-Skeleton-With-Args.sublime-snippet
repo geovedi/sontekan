@@ -1,0 +1,47 @@
+<!--
+Sublime Text 2 snippet to create Python skeleton script.
+
+Install this file to `$HOME/Library/Application Support/Sublime Text 2/Packages/User`.
+
+To activate, type `python` and followed by <TAB> (maybe twice pressing the
+<TAB> if your default file syntax is `Plain Text`.)
+-->
+
+<snippet>
+    <content><![CDATA[
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import sys
+import argparse
+import traceback
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Booyakasha!')
+    parser.add_argument('-F', '--foo', required=True, help='foo')
+    parser.add_argument('-B', '--bar', help='bar')
+    args = parser.parse_args()
+
+    print args.foo,
+    if args.bar:
+        print args.bar
+    sys.exit(0)
+
+if __name__ == '__main__':
+    try:
+        main()
+    except KeyboardInterrupt, e:
+        raise e
+    except SystemExit, e:
+        raise e
+    except Exception, e:
+        print str(e)
+        traceback.print_exc()
+        sys.exit(1)
+
+]]></content>
+    <tabTrigger>python</tabTrigger>
+    <scope></scope>
+    <description>Python skeleton script with args</description>
+</snippet>
