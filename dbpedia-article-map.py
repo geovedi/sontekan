@@ -21,48 +21,50 @@ def norm(text):
 
 
 class Label(Sink):
-    def __init__(self):
-        self.labels = plyvel.DB('./labels', create_if_missing=True)
+    def __init__(self, loc):
+        self.db = plyvel.DB(loc, create_if_missing=True)
 
     def triple(self, s, p, o):
         k = s.encode('utf-8')
         v = norm(o).encode('utf-8')
-        self.labels.put(k, v)
+        self.db.put(k, v)
         logging.info('labels: {0} => {1}'.format(k, v))
 
 
 class Category(Sink):
-    def __init__(self):
-        self.categories = plyvel.DB('./categories', create_if_missing=True)
+    def __init__(self, loc):
+        self.db = plyvel.DB(loc, create_if_missing=True)
 
     def triple(self, s, p, o):
         k = o.encode('utf-8')
         v = norm(s).encode('utf-8') # norm requires unicode input
         logging.info((k, v))
-        data = self.categories.get(k)
+        data = self.db.get(k)
         if data:
             data = set(json.loads(data))
         else:
             data = set()
         if v in wordset:
             data.add(v)
-            self.categories.put(k, json.dumps(list(v)))
+            self.db.put(k, json.dumps(list(v)))
             logging.info('categories: {0} => {1}'.format(k, v))
 
 
 if __name__ == '__main__':
     
-    labels = NTriplesParser(sink=Label())
-    categories = NTriplesParser(sink=Category())
+    labels = NTriplesParser(sink=Label('./labels'))
+    categories = NTriplesParser(sink=Category('./categories'))
 
 
-    for filename in ['labels_en.nt', 'labels_en_uris_id.nt', 'category_labels_en.nt', 'category_labels_en_uris_id.nt']:
+    for filename in ['./labels_en.nt', './labels_en_uris_id.nt', './category_labels_en.nt', './category_labels_en_uris_id.nt']:
         logging.info('labels: processing: {0}'.format(filename))
         for line in open(filename):
             labels.parsestring(line)
 
-    for filename in ['article_categories_en.nt', 'article_categories_en_uris_id.nt']:
+    for filename in ['./article_categories_en.nt', './article_categories_en_uris_id.nt']:
         logging.info('categories: processing: {0}'.format(filename))
         for line in open(filename):
             categories.parsestring(line)
 
+    labels.db.close()
+    categories.db.close()
