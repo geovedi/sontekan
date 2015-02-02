@@ -31,20 +31,22 @@ class Label(Sink):
 
 
 class Category(Sink):
-    def __init__(self, loc, wordset=set()):
+    def __init__(self, loc, wordset=set(), labels=None):
         self.db = plyvel.DB(loc, create_if_missing=True)
         self.wordset = wordset
+        self.labels = labels
 
     def triple(self, s, p, o):
         k = o.encode('utf-8')
-        v = norm(s).encode('utf-8') # norm requires unicode input
-        logging.info((k, v))
-        data = self.db.get(k)
-        if data:
-            data = set(json.loads(data))
-        else:
-            data = set()
+        v = s.encode('utf-8')
+
+        if self.labels:
+            v = self.labels.get(v, default=v)
+
         if v in self.wordset:
+            data = self.db.get(k, default=set())
+            if data:
+                data = set(json.loads(data))
             data.add(v)
             self.db.put(k, json.dumps(list(data)))
             logging.info('categories: {0} => {1}'.format(k, v))
@@ -54,7 +56,8 @@ if __name__ == '__main__':
 
     wordset = set(pickle.load(open('./wordset.p')))
     labels = NTriplesParser(sink=Label('./labels'))
-    categories = NTriplesParser(sink=Category('./categories', wordset))
+    categories = NTriplesParser(sink=Category('./categories', 
+                                wordset=wordset, labels=labels.sink.db))
 
 
     for filename in ['./labels_en.nt',
@@ -71,5 +74,5 @@ if __name__ == '__main__':
         for line in open(filename):
             categories.parsestring(line)
 
-    labels.db.close()
-    categories.db.close()
+    labels.sink.db.close()
+    categories.sink.db.close()
