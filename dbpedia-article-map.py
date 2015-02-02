@@ -15,7 +15,8 @@ from rdflib.plugins.parsers.ntriples import NTriplesParser, Sink
 
 
 def norm(text):
-    return '_'.join(re.sub(r'[\p{P}\p{S}]+', ' ', unidecode(text).lower()).split())
+    return '_'.join(re.sub(r'[\p{P}\p{S}]+', ' ',
+                    re.sub(r'\d+', '0', unidecode(text).lower())).split())
 
 
 class Label(Sink):
@@ -56,12 +57,16 @@ if __name__ == '__main__':
     categories = NTriplesParser(sink=Category('./categories', wordset))
 
 
-    for filename in ['./labels_en.nt', './labels_en_uris_id.nt', './category_labels_en.nt', './category_labels_en_uris_id.nt']:
+    for filename in ['./labels_en.nt',
+                     './labels_en_uris_id.nt',
+                     './category_labels_en.nt',
+                     './category_labels_en_uris_id.nt']:
         logging.info('labels: processing: {0}'.format(filename))
         for line in open(filename):
             labels.parsestring(line)
 
-    for filename in ['./article_categories_en.nt', './article_categories_en_uris_id.nt']:
+    for filename in ['./article_categories_en.nt',
+                     './article_categories_en_uris_id.nt']:
         logging.info('categories: processing: {0}'.format(filename))
         for line in open(filename):
             categories.parsestring(line)
