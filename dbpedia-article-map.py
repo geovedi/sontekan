@@ -45,7 +45,7 @@ class Category(Sink):
             data = set()
         if v in self.wordset:
             data.add(v)
-            self.db.put(k, json.dumps(list(v)))
+            self.db.put(k, json.dumps(list(data)))
             logging.info('categories: {0} => {1}'.format(k, v))
 
 
