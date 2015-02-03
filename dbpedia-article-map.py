@@ -19,9 +19,11 @@ def norm(text):
     return '_'.join(re.sub(r'[\p{P}\p{S}]+', ' ',
                     re.sub(r'\d+', '0', unidecode(text).lower())).split())
 
+
 def norm_(text):
     text = text.replace('http://dbpedia.org/resource/', '')
     text = text.replace('Category:', '')
+    text = re.sub(r'_\(.*?\)', '', text)
     return norm(text)
 
 
@@ -75,7 +77,6 @@ if __name__ == '__main__':
     labels = NTriplesParser(sink=Label('./labels'))
     categories = NTriplesParser(sink=Category('./categories', 
                                 labels=labels.sink.db))
-
 
     for filename in ['./labels_en.nt',
                      './labels_en_uris_id.nt',
