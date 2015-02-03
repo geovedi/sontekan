@@ -18,6 +18,11 @@ def norm(text):
     return '_'.join(re.sub(r'[\p{P}\p{S}]+', ' ',
                     re.sub(r'\d+', '0', unidecode(text).lower())).split())
 
+def norm_(text):
+    text = text.replace('http://dbpedia.org/resource/', '')
+    text = text.replace('Category:', '')
+    return norm(text)
+
 
 class Label(Sink):
     def __init__(self, loc):
@@ -26,8 +31,15 @@ class Label(Sink):
     def triple(self, s, p, o):
         k = s.encode('utf-8')
         v = norm(o).encode('utf-8')
-        self.db.put(k, v)
-        logging.info('labels: {0} => {1}'.format(k, v))
+        v_ = norm_(o).encode('utf-8')
+        # store prop:name, also prop:label
+        data = self.db.get(k, default=set())
+        if data:
+            data = set(json.loads(data))
+        data.add(v)
+        data.add(v_)
+        self.db.put(k, json.dumps(list(data)))
+        logging.info('labels: {0} => {1}'.format(k, data))
 
 
 class Category(Sink):
