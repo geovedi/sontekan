@@ -44,9 +44,8 @@ class Label(Sink):
 
 
 class Category(Sink):
-    def __init__(self, loc, wordset=set(), labels=None):
+    def __init__(self, loc, labels=None):
         self.db = plyvel.DB(loc, create_if_missing=True)
-        self.wordset = wordset
         self.labels = labels
 
     def triple(self, s, p, o):
@@ -64,8 +63,7 @@ class Category(Sink):
             data = set(json.loads(data))
 
         for w in v:
-            if w in self.wordset:
-                data.add(w)
+            data.add(w)
 
         if data:
             self.db.put(k, json.dumps(list(data)))
@@ -74,10 +72,9 @@ class Category(Sink):
 
 if __name__ == '__main__':
 
-    wordset = set(pickle.load(open('./wordset.p')))
     labels = NTriplesParser(sink=Label('./labels'))
     categories = NTriplesParser(sink=Category('./categories', 
-                                wordset=wordset, labels=labels.sink.db))
+                                labels=labels.sink.db))
 
 
     for filename in ['./labels_en.nt',
