@@ -16,15 +16,14 @@ N_JOBS = cpu_count() - 1
 class Vector(object):
     def __init__(self, model):
         self.word2vec = Word2Vec.load(model)
-        self.word2vec.init_sims(True)
 
     def refit(self, words, niters=5, verbose=False):
-        wordset = set([word for word in words if word in self.word2vec.index2word])
+        wordlist = set([word for word in words if word in self.word2vec.index2word])
         for i in range(niters):
-            for word in wordset:
+            for word in wordlist:
                 if verbose:
                     logging.info((i, word, self.word2vec[word][:5]))
-                synonyms = [syn for syn in wordset if syn != word]
+                synonyms = [syn for syn in wordlist if syn != word]
                 if not synonyms:
                     continue
                 vector = len(synonyms) * self.word2vec[word]
@@ -33,8 +32,7 @@ class Vector(object):
                 idxword = self.word2vec.index2word.index(word)
                 self.word2vec.syn0[idxword] = vector / (2 * len(synonyms))
                 if verbose:
-                    logging.info((i, synword, self.word2vec[w][:5]))
-        self.word2vec.init_sims(True)
+                    logging.info((i, word, self.word2vec[w][:5]))
 
 
 def main(model, lexicon):
