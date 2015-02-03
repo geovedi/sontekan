@@ -47,17 +47,17 @@ class Label(Sink):
 
 
 class Category(Sink):
-    def __init__(self, loc, labels=None):
+    def __init__(self, loc, labels):
         self.db = plyvel.DB(loc, create_if_missing=True)
         self.labels = labels
+        if not self.labels:
+            raise Exception('Labels not set.')
 
     def triple(self, s, p, o):
         k = o.encode('utf-8')
         s = s.encode('utf-8')
 
-        if self.labels:
-            v = self.labels.get(s, default=set())
-
+        v = self.labels.get(s, default=set())
         if v:
             v = set(json.loads(v))
 
