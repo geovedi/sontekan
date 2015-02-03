@@ -3,29 +3,29 @@
 import UserDict
 import numpy as np
 import ujson as json
-import shutil
 import os
 import hashlib
 
 
 class NumpyDB(UserDict.DictMixin):
-    def __init__(self, prefix):
-        self.__prefix__ = prefix
+    def __init__(self, prefix, sync=True):
+        self.sync = sync
+        self.prefix = prefix
         try:
-            os.makedirs(self.__prefix__)
+            os.makedirs(self.prefix)
         except Exception:
             pass
 
-        self.__metadata__ = '{0}/metadata.json'.format(self.__prefix__)
+        self.metadata = '{0}/metadata.json'.format(self.prefix)
         try:
-            self.__index__ = json.load(open(self.__metadata__))
+            self.index = json.load(open(self.metadata))
         except:
-            self.__index__ = []
+            self.index = []
 
 
     def __dir__(self, key):
         h = hashlib.md5(key).hexdigest()
-        d = os.path.join(self.__prefix__, *map(''.join, zip(*[iter(h)]*8)))
+        d = os.path.join(self.prefix, *map(''.join, zip(*[iter(h)]*8)))
         return d, h
 
 
@@ -34,9 +34,9 @@ class NumpyDB(UserDict.DictMixin):
         try:
             return np.load('{0}/{1}.npy'.format(d, h))
         except:
-            if key in self.__index__:
-                self.__index__.remove(key)
-                json.dumps(self.__index__, open(self.__metadata__, 'w'))
+            if key in self.index:
+                self.index.remove(key)
+                json.dump(self.index, open(self.metadata, 'w'))
             return None
 
 
@@ -49,24 +49,29 @@ class NumpyDB(UserDict.DictMixin):
 
         try:
             np.save('{0}/{1}.npy'.format(d, h), value)
-            self.__index__.append(key)
-            json.dumps(self.__index__, open(self.__metadata__, 'w'))
+            self.index.append(key)
+            if self.sync:
+                self.save_metadata()
         except Exception:
             raise
 
 
+    def save_metadata(self):
+        json.dump(self.index, open(self.metadata, 'w'))
+
+
     def iterkeys(self):
-        for key in self.__index__:
+        for key in self.index:
             yield key
 
 
     def itervalues(self):
-        for key in self.__index__:
+        for key in self.index:
             yield self[key]
 
 
     def iteritems(self):
-        for key in self.__index__:
+        for key in self.index:
             yield key, self[key]
 
 
@@ -75,13 +80,13 @@ class NumpyDB(UserDict.DictMixin):
 
 
     def keys(self):
-        return self.__index__
+        return self.index
 
 
     def values(self):
-        return [self[key] for key in self.__index__]
+        return [self[key] for key in self.index]
 
 
     def items(self):
-        return [(key, self[key]) for key in self.__index__]
+        return [(key, self[key]) for key in self.index]
 
