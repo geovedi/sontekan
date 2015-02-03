@@ -35,7 +35,7 @@ class Vector(object):
                     logging.info((i, word, self.word2vec[w][:5]))
 
 
-def main(model, lexicon):
+def main(model, lexicon, n_jobs=N_JOBS):
     model = Vector(model)
 
     def process(line):
@@ -44,7 +44,7 @@ def main(model, lexicon):
         model.refit(words)
         logging.info('{0}: {1}'.format(unquote(label), ', '.join(words[:10])))
 
-    Parallel(n_jobs=N_JOBS)(delayed(process)(line) for line in open(lexicon))
+    Parallel(n_jobs=n_jobs)(delayed(process)(line) for line in open(lexicon))
     model.save('{0}.fit'.format(model))
 
 
