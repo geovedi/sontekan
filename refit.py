@@ -13,31 +13,41 @@ import plac
 N_JOBS = cpu_count() - 1
 
 
-class Model(Word2Vec):
-    def refit(self, words, niters=5):
-        wset = set([w for w in words if w in self.index2word])
+class Vector(object):
+    def __init__(self, model):
+        self.word2vec = Word2Vec.load(model)
+        self.word2vec.init_sims(True)
+
+    def refit(self, words, niters=5, verbose=False):
+        wordset = set([word for word in words if word in self.word2vec.index2word])
         for i in range(niters):
-            for w in wset:
-                ns = [n for n in wset if n != w]
-                if not ns:
+            for word in wordset:
+                if verbose:
+                    logging.info((i, word, self.word2vec[word][:5]))
+                synonyms = [syn for syn in wordset if syn != word]
+                if not synonyms:
                     continue
-                v = len(ns) * self[w]
-                for n in ns:
-                    v += self[n]
-                self.syn0[self.index2word.index(w)] = v / (2 * len(ns))
+                vector = len(synonyms) * self.word2vec[word]
+                for synonym in synonyms:
+                    vector += self.word2vec[synonym]
+                idxword = self.word2vec.index2word.index(word)
+                self.word2vec.syn0[idxword] = vector / (2 * len(synonyms))
+                if verbose:
+                    logging.info((i, synword, self.word2vec[w][:5]))
+        self.word2vec.init_sims(True)
 
 
 def main(model, lexicon):
-    m = Model.load(model)
+    model = Vector(model)
 
     def process(line):
         label, words = line.strip().split('\t')
         words = words.split(',')
-        m.refit(words)
+        model.refit(words)
         logging.info('{0}: {1}'.format(unquote(label), ', '.join(words[:10])))
 
     Parallel(n_jobs=N_JOBS)(delayed(process)(line) for line in open(lexicon))
-    m.save('{0}.fit'.format(model))
+    model.save('{0}.fit'.format(model))
 
 
 if __name__ == '__main__':
