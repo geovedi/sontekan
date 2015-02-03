@@ -43,7 +43,7 @@ class Label(Sink):
         data.add(v)
         data.add(v_)
         self.db.put(k, json.dumps(list(data)))
-        logging.info('labels: {0} => {1}'.format(k, data))
+        logging.info('labels: {0} => {1}'.format(unquote(k), data))
 
 
 class Category(Sink):
@@ -70,7 +70,7 @@ class Category(Sink):
 
         if data:
             self.db.put(k, json.dumps(list(data)))
-            logging.info('categories: {0} => {1}'.format(k, v))
+            logging.info('categories: {0} => {1}'.format(unquote(k), list(data)[:5]))
 
 
 if __name__ == '__main__':
