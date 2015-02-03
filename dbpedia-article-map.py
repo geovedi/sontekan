@@ -21,6 +21,7 @@ def norm(text):
 
 
 def norm_(text):
+    text = unquote(text)
     text = text.replace('http://dbpedia.org/resource/', '')
     text = text.replace('Category:', '')
     text = re.sub(r'_\(.*?\)', '', text)
