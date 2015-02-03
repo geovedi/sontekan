@@ -2,7 +2,7 @@
 
 import UserDict
 import numpy as np
-import ujson
+import ujson as json
 import shutil
 import os
 import hashlib
@@ -13,12 +13,12 @@ class NumpyDB(UserDict.DictMixin):
         self.__prefix__ = prefix
         try:
             os.makedirs(self.__prefix__)
-        except:
+        except Exception:
             pass
 
         self.__metadata__ = '{0}/metadata.json'.format(self.__prefix__)
         try:
-            self.__index__ = ujson.load(open(self.__metadata__))
+            self.__index__ = json.load(open(self.__metadata__))
         except:
             self.__index__ = []
 
@@ -26,29 +26,33 @@ class NumpyDB(UserDict.DictMixin):
     def __dir__(self, key):
         h = hashlib.md5(key).hexdigest()
         d = os.path.join(self.__prefix__, *map(''.join, zip(*[iter(h)]*8)))
-        return d
+        return d, h
 
 
     def __getitem__(self, key):
-        p = self.__dir__(key)
+        d, h = self.__dir__(key)
         try:
-            return np.load('{0}/{1}.npy'.format(p, key))
+            return np.load('{0}/{1}.npy'.format(d, h))
         except:
             if key in self.__index__:
                 self.__index__.remove(key)
-                ujson.dumps(self.__index__, open(self.__metadata__, 'w'))
+                json.dumps(self.__index__, open(self.__metadata__, 'w'))
             return None
 
 
     def __setitem__(self, key, value):
-        p = self.__dir__(key)
+        d, h = self.__dir__(key)
         try:
-            os.makedirs(p)
-        except:
+            os.makedirs(d, mode=0755)
+        except Exception:
             pass
-        np.save('{0}/{1}.npy'.format(p, key), value)
-        self.__index__.append(key)
-        ujson.dumps(self.__index__, open(self.__metadata__, 'w'))
+
+        try:
+            np.save('{0}/{1}.npy'.format(d, h), value)
+            self.__index__.append(key)
+            json.dumps(self.__index__, open(self.__metadata__, 'w'))
+        except Exception:
+            raise
 
 
     def iterkeys(self):
