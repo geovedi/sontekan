@@ -4,11 +4,12 @@ import logging
 logging.basicConfig(format='%(asctime)s [%(process)d] [%(levelname)s] %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S', level=logging.INFO)
 
+import plac
+from random import shuffle
 from urllib import unquote
 from gensim.models.word2vec import *
 from joblib import Parallel, delayed
 from psutil import cpu_count
-import plac
 
 N_JOBS = cpu_count() - 1
 
@@ -16,26 +17,36 @@ N_JOBS = cpu_count() - 1
 class Vector(object):
     def __init__(self, model):
         self.word2vec = Word2Vec.load(model)
+        self.word2vec.init_sims(True)
 
-    def refit(self, words, niters=5, verbose=False):
-        wordlist = set([word for word in words if word in self.word2vec.index2word])
-        for i in range(niters):
-            for word in wordlist:
-                if verbose:
-                    logging.info((i, word, self.word2vec[word][:5]))
-                synonyms = [syn for syn in wordlist if syn != word]
-                if not synonyms:
-                    continue
-                vector = len(synonyms) * self.word2vec[word]
-                for synonym in synonyms:
-                    vector += self.word2vec[synonym]
-                idxword = self.word2vec.index2word.index(word)
-                self.word2vec.syn0[idxword] = vector / (2 * len(synonyms))
-                if verbose:
-                    logging.info((i, word, self.word2vec[w][:5]))
+    def refit(self, words, verbose=False):
+        wordset = set([word for word in words if word in self.word2vec.index2word])
+        for word in list(wordset):
+            for wordsim, score in self.word2vec.most_similar(word, topn=5):
+                if score >= 0.9:
+                    wordset.add(wordsim)
+
+        vectors = dict((word, self.word2vec[word]) for word in wordset)
+
+        for word in wordset:
+            synonyms = [syn for syn in wordset if syn != word]
+            if not synonyms:
+                continue
+            vector = len(synonyms) * vectors[word]
+            for synonym in synonyms:
+                vector += vectors[synonym]
+            vector = vector / (2 * len(synonyms))
+            vector /= sqrt((vector ** 2).sum(-1))
+            vectors[word] = vector
+
+        for word, vector in vectors.iteritems():
+            if verbose:
+                logging.info(('final', word, vector[:5]))
+            idxword = self.word2vec.index2word.index(word)
+            self.word2vec.syn0[idxword] = vector
 
 
-def main(model, lexicon, n_jobs=N_JOBS):
+def main(model, lexicon, n_iters=10, n_jobs=N_JOBS):
     model = Vector(model)
 
     def process(line):
@@ -44,8 +55,13 @@ def main(model, lexicon, n_jobs=N_JOBS):
         model.refit(words)
         logging.info('{0}: {1}'.format(unquote(label), ', '.join(words[:10])))
 
-    Parallel(n_jobs=n_jobs)(delayed(process)(line) for line in open(lexicon))
-    model.save('{0}.fit'.format(model))
+    lines = open(lexicon).readlines()
+
+    for i in range(n_iters):
+        shuffle(lines)
+        Parallel(n_jobs=n_jobs)(delayed(process)(line) for line in lines)
+        model.word2vec.init_sims(True)
+        model.save('{0}-refit.{1}'.format(i, model))
 
 
 if __name__ == '__main__':
