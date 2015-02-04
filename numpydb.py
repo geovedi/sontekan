@@ -10,14 +10,20 @@ class NumpyDB(UserDict.DictMixin):
         self.db = anydbm.open(filename, flag)
 
     def __getitem__(self, key):
+        if isinstance(key, unicode):
+            key = key.encode('utf-8')
         value = self.db.get(key)
         if value:
             return self.unpack(value)
 
     def __setitem__(self, key, value):
+        if isinstance(key, unicode):
+            key = key.encode('utf-8')
         self.db[key] = self.pack(value)
 
     def __delitem__(self, key):
+        if isinstance(key, unicode):
+            key = key.encode('utf-8')
         del self.db[key]
 
     def pack(self, s):
@@ -30,6 +36,8 @@ class NumpyDB(UserDict.DictMixin):
         return data
 
     def setdefault(self, key, default=None):
+        if isinstance(key, unicode):
+            key = key.encode('utf-8')
         value = self.db.get(key)
         if value:
             return self.unpack(data)
@@ -40,7 +48,7 @@ class NumpyDB(UserDict.DictMixin):
 
     def iterkeys(self):
         for key in self.db:
-            yield key
+            yield key.decode('utf-8')
 
     def itervalues(self):
         for key in self.db:
@@ -48,13 +56,14 @@ class NumpyDB(UserDict.DictMixin):
 
     def iteritems(self):
         for key in self.db:
-            yield key, self[key]
+            yield key.decode('utf-8'), self[key]
 
     def keys(self):
-        return [key for key in self.iterkeys()]
+        return [key.decode('utf-8') for key in self.iterkeys()]
 
     def values(self):
         return [value for value in self.itervalues()]
 
     def items(self):
-        return [(key, value) for (key, value) in self.iteritems()]
+        return [(key.decode('utf-8'), value) for (key, value) in self.iteritems()]
+
