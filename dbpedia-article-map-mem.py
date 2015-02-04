@@ -37,14 +37,12 @@ class Label(Sink):
 
     def triple(self, s, p, o):
         k = s.encode('utf-8')
-        data = set()
-        data.add(norm_(o).encode('utf-8'))
+        self.store[k].add(norm_(o).encode('utf-8'))
         if ', ' in (o).encode('utf-8'):
             for v in (o).encode('utf-8').split(', '):
-                data.add(norm_(v).encode('utf-8'))
-        data.add(norm(o).encode('utf-8'))
-        self.store[k] = data
-        logging.info('labels: {0} => {1}'.format(unquote(k), list(data)))
+                self.store[k].add(norm_(v).encode('utf-8'))
+        self.store[k].add(norm(o).encode('utf-8'))
+        logging.info('labels: {0} => {1}'.format(unquote(k), list(self.store[k])))
 
 
 class Category(Sink):
