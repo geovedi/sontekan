@@ -20,10 +20,16 @@ class Vector(object):
         self.word2vec.init_sims(True)
 
     def refit(self, words, verbose=False):
-        wordset = set([word for word in words if word in self.word2vec.index2word])
+        wordset = set([word for word in words 
+                       if word in self.word2vec.index2word
+                       and len(word) > 2])
+
+        if len(wordset) <= 3:
+            continue
+
         for word in list(wordset):
             for wordsim, score in self.word2vec.most_similar(word, topn=5):
-                if score >= 0.9:
+                if score >= 0.8:
                     wordset.add(wordsim)
 
         vectors = dict((word, self.word2vec[word]) for word in wordset)
@@ -44,6 +50,7 @@ class Vector(object):
                 logging.info(('final', word, vector[:5]))
             idxword = self.word2vec.index2word.index(word)
             self.word2vec.syn0[idxword] = vector
+
 
 
 def main(model, lexicon, n_iters=10, n_jobs=N_JOBS):
