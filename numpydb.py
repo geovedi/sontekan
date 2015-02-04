@@ -2,29 +2,31 @@
 
 import UserDict
 import numpy as np
-import anydbm
+import plyvel
 
 
 class NumpyDB(UserDict.DictMixin):
-    def __init__(self, filename, flag='c'):
-        self.db = anydbm.open(filename, flag)
+    def __init__(self, filename, create_if_missing=True, sync=True):
+        self.db = plyvel.DB(filename, create_if_missing=create_if_missing)
+        self.sync = sync
 
     def __getitem__(self, key):
         if isinstance(key, unicode):
             key = key.encode('utf-8')
-        value = self.db.get(key)
-        if value:
-            return self.unpack(value)
+        try:
+            return self.unpack(self.db.get(key))
+        except Exception:
+            return None
 
     def __setitem__(self, key, value):
         if isinstance(key, unicode):
             key = key.encode('utf-8')
-        self.db[key] = self.pack(value)
+        self.db.put(key, self.pack(value), sync=self.sync)
 
     def __delitem__(self, key):
         if isinstance(key, unicode):
             key = key.encode('utf-8')
-        del self.db[key]
+        self.db.delete(key, sync=self.sync)
 
     def pack(self, s):
         return '-||-'.join([str(s.dtype), str(s.shape), s.tostring()])
@@ -38,13 +40,19 @@ class NumpyDB(UserDict.DictMixin):
     def setdefault(self, key, default=None):
         if isinstance(key, unicode):
             key = key.encode('utf-8')
-        value = self.db.get(key)
-        if value:
-            return self.unpack(data)
-        else:
+        try:
+            return self.unpack(self.db.get(key))
+        except Exception:
             if default.any():
                 self[key] = default
                 return default
+            return None
+
+    def write_batch(self, *args, **kwargs):
+        return self.db.write_batch(*args, **kwargs)
+
+    def close(self):
+        self.db.close()
 
     def iterkeys(self):
         for key in self.db:
@@ -66,4 +74,3 @@ class NumpyDB(UserDict.DictMixin):
 
     def items(self):
         return [(key.decode('utf-8'), value) for (key, value) in self.iteritems()]
-
