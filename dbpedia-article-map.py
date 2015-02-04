@@ -13,6 +13,10 @@ from urllib import unquote
 from collections import defaultdict
 from unidecode import unidecode
 from rdflib.plugins.parsers.ntriples import NTriplesParser, Sink
+from joblib import Parallel, delayed
+from psutil import cpu_count
+
+N_JOBS = cpu_count() - 1
 
 
 def norm(text):
@@ -79,27 +83,28 @@ if __name__ == '__main__':
     categories = NTriplesParser(sink=Category('./categories', 
                                 labels=labels.sink.db))
 
+    def process_labels(line):
+        labels.parsestring(line)
+
     for filename in ['./labels_en.nt',
                      './labels_en_uris_id.nt',
                      './category_labels_en.nt',
                      './category_labels_en_uris_id.nt']:
         logging.info('labels: processing: {0}'.format(filename))
-        for line in open(filename):
-            labels.parsestring(line)
+        Parallel(n_jobs=N_JOBS)(delayed(process_labels)(line) for line in open(filename))
+
+    def process_categories(line):
+        categories.parsestring(line)
 
     for filename in ['./article_categories_en.nt',
                      './article_categories_en_uris_id.nt']:
         logging.info('categories: processing: {0}'.format(filename))
-        for line in open(filename):
-            categories.parsestring(line)
+        Parallel(n_jobs=N_JOBS)(delayed(process_categories)(line) for line in open(filename))
 
     with open('categories.txt', 'w') as out:
         for k, v in categories.sink.db:
             v = json.loads(v)
-            if len(v) >= 3 and not 'establishments' in k \
-                and not k.endswith('births') \
-                and not k.endswith('deaths'):
-                out.write('{0}\t{1}\n'.format(unquote(k), ','.join(v)))
+            out.write('{0}\t{1}\n'.format(unquote(k), ','.join(v)))
 
     labels.sink.db.close()
     categories.sink.db.close()
