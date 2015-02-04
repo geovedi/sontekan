@@ -2,91 +2,59 @@
 
 import UserDict
 import numpy as np
-import ujson as json
-import os
-import hashlib
+import anydbm
 
 
 class NumpyDB(UserDict.DictMixin):
-    def __init__(self, prefix, sync=True):
-        self.sync = sync
-        self.prefix = prefix
-        try:
-            os.makedirs(self.prefix)
-        except Exception:
-            pass
-
-        self.metadata = '{0}/metadata.json'.format(self.prefix)
-        try:
-            self.index = json.load(open(self.metadata))
-        except:
-            self.index = []
-
-
-    def __dir__(self, key):
-        h = hashlib.md5(key).hexdigest()
-        d = os.path.join(self.prefix, *map(''.join, zip(*[iter(h)]*8)))
-        return d, h
-
+    def __init__(self, filename, flag='c'):
+        self.db = anydbm.open(filename, flag)
 
     def __getitem__(self, key):
-        d, h = self.__dir__(key)
-        try:
-            return np.load('{0}/{1}.npy'.format(d, h))
-        except:
-            if key in self.index:
-                self.index.remove(key)
-                json.dump(self.index, open(self.metadata, 'w'))
-            return None
-
+        value = self.db.get(key)
+        if value:
+            return self.unpack(value)
 
     def __setitem__(self, key, value):
-        d, h = self.__dir__(key)
-        try:
-            os.makedirs(d, mode=0755)
-        except Exception:
-            pass
+        self.db[key] = self.pack(value)
 
-        try:
-            np.save('{0}/{1}.npy'.format(d, h), value)
-            self.index.append(key)
-            if self.sync:
-                self.save_metadata()
-        except Exception:
-            raise
+    def __delitem__(self, key):
+        del self.db[key]
 
+    def pack(self, s):
+        return '-||-'.join([str(s.dtype), str(s.shape), s.tostring()])
 
-    def save_metadata(self):
-        json.dump(self.index, open(self.metadata, 'w'))
+    def unpack(self, s):
+        dtype, shape, array = s.split('-||-')
+        data = np.fromstring(array, dtype=dtype)
+        data.shape = eval(shape)
+        return data
 
+    def setdefault(self, key, default=None):
+        value = self.db.get(key)
+        if value:
+            return self.unpack(data)
+        else:
+            if default.any():
+                self[key] = default
+                return default
 
     def iterkeys(self):
-        for key in self.index:
+        for key in self.db:
             yield key
 
-
     def itervalues(self):
-        for key in self.index:
+        for key in self.db:
             yield self[key]
 
-
     def iteritems(self):
-        for key in self.index:
+        for key in self.db:
             yield key, self[key]
 
-
-    def __iter__(self):
-        return self.iterkeys()
-
-
     def keys(self):
-        return self.index
-
+        return [key for key in self.iterkeys()]
 
     def values(self):
-        return [self[key] for key in self.index]
-
+        return [value for value in self.itervalues()]
 
     def items(self):
-        return [(key, self[key]) for key in self.index]
-
+        return [(key, value) for (key, value) in self.iteritems()]
