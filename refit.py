@@ -15,9 +15,8 @@ N_JOBS = cpu_count() - 1
 
 
 class Vector(object):
-    def __init__(self, model):
-        self.word2vec = Word2Vec.load(model)
-        self.word2vec.init_sims(True)
+    def __init__(self, model, fvocab):
+        self.word2vec = Word2Vec.load_word2vec_format(model, fvocab=fvocab, binary=False, norm_only=False)
 
     def refit(self, words, verbose=False):
         wordset = set([word for word in words 
@@ -42,7 +41,6 @@ class Vector(object):
             for synonym in synonyms:
                 vector += vectors[synonym]
             vector = vector / (2 * len(synonyms))
-            vector /= sqrt((vector ** 2).sum(-1))
             vectors[word] = vector
 
         for word, vector in vectors.iteritems():
@@ -53,8 +51,8 @@ class Vector(object):
 
 
 
-def main(model, lexicon, n_iters=10, n_jobs=N_JOBS):
-    model = Vector(model)
+def main(model, fvocab, lexicon, n_iters=10, n_jobs=N_JOBS):
+    model = Vector(model, fvocab)
 
     def process(line):
         label, words = line.strip().split('\t')
@@ -67,8 +65,7 @@ def main(model, lexicon, n_iters=10, n_jobs=N_JOBS):
     for i in range(n_iters):
         shuffle(lines)
         Parallel(n_jobs=n_jobs)(delayed(process)(line) for line in lines)
-        model.word2vec.init_sims(True)
-        model.save('{0}-refit.{1}'.format(i, model))
+        model.save_word2vec_format('{0}-refit.{1}'.format(i, model), binary=False)
 
 
 if __name__ == '__main__':
