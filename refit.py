@@ -25,7 +25,7 @@ class Vector(object):
                        and len(word) > 2])
 
         if len(wordset) <= 3:
-            continue
+            return
 
         for word in list(wordset):
             for wordsim, score in self.word2vec.most_similar(word, topn=5):
