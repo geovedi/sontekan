@@ -1,4 +1,5 @@
 # From https://gist.github.com/stuarteberg/7ecd8cb7b24d12f4ffd9
+#      http://stackoverflow.com/a/25772186
 # License: public domain
 #
 class SimpleView(object):
