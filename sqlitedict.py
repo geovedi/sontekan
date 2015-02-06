@@ -8,7 +8,7 @@ class SQLiteDict(UserDict.DictMixin):
 
     # supported types: int, long, float, str, unicode
 
-    def __init__(self, keytype, valtype, path=':memory:', tablename='Dict', create_index_on_init=False):
+    def __init__(self, keytype, valtype, path=':memory:', tablename='Dict'):
         self._keytype, self._valtype = keytype, valtype
         self._con = sqlite3.connect(path, detect_types=sqlite3.PARSE_DECLTYPES)
         self._cur = self._con.cursor()
@@ -20,15 +20,10 @@ class SQLiteDict(UserDict.DictMixin):
             self._cur.execute('PRAGMA temp_store=MEMORY')
         except sqlite3.OperationalError:
             pass
-        if create_index_on_init:
-            self.build_index()
         self._insertQuery = 'REPLACE INTO {0} (key, value) values (?, ?)'.format(tablename)
         self._selectQuery = 'SELECT value FROM {0} WHERE key=?'.format(tablename)
         self._selectKeysQuery = 'SELECT key FROM {0}'.format(tablename)
         self._deleteQuery = 'DELETE FROM {0} WHERE key=?'.format(tablename)
-
-    def build_index(self):
-        self._cur.execute('CREATE INDEX {0}_index ON {0} (key)'.format(tablename))
 
     def keys(self):
         self._cur.execute(self._selectKeysQuery)
@@ -47,7 +42,7 @@ class SQLiteDict(UserDict.DictMixin):
             c += 1
         logging.info('Adapted {0} entries.'.format(c))
         self._cur.executemany(self._insertQuery, adapted)
-        self._cur.commit()
+        self._con.commit()
         logging.info('Inserted {0} entries.'.format(c))
 
     def __setitem__(self, key, val):
