@@ -35,6 +35,7 @@ class SQLiteDict(UserDict.DictMixin):
             if c % 10000 == 0:
                 logging.info('Inserted {0} entries.'.format(c))
             c += 1
+        logging.info('Inserted {0} entries.'.format(c))
         self._cur.execute('COMMIT')
 
     def __setitem__(self, key, val):
