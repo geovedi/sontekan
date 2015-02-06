@@ -12,7 +12,14 @@ class SQLiteDict(UserDict.DictMixin):
         self._keytype, self._valtype = keytype, valtype
         self._con = sqlite3.connect(path, detect_types=sqlite3.PARSE_DECLTYPES)
         self._cur = self._con.cursor()
-        self._cur.execute('CREATE TABLE {0} (key UNIQUE, value)'.format(tablename))
+        try:
+            self._cur.execute('CREATE TABLE {0} (key UNIQUE, value)'.format(tablename))
+            self._cur.execute('PRAGMA synchronous=OFF')
+            self._cur.execute('PRAGMA count_changes=OFF')
+            self._cur.execute('PRAGMA journal_mode=MEMORY')
+            self._cur.execute('PRAGMA temp_store=MEMORY')
+        except sqlite3.OperationalError:
+            pass
         if create_index_on_init:
             self.build_index()
         self._insertQuery = 'REPLACE INTO {0} (key, value) values (?, ?)'.format(tablename)
@@ -28,15 +35,20 @@ class SQLiteDict(UserDict.DictMixin):
         return [self._keytype(t[0]) for t in self._cur.fetchall()]
 
     def batch_insert(self, data):
-        self._cur.execute('BEGIN TRANSACTION')
+        adapted = []
         c = 0
         for key, val in data:
-            self.__setitem__(key, val)
-            if c % 10000 == 0:
-                logging.info('Inserted {0} entries.'.format(c))
+            t = []
+            for obj, protocol in (key, self._keytype), (val, self._valtype):
+                t.append(_generic_adapt(obj, protocol))
+            adapted.append(tuple(t))
+            if c % 100000 == 0:
+                logging.info('Adapted {0} entries.'.format(c))
             c += 1
+        logging.info('Adapted {0} entries.'.format(c))
+        self._cur.executemany(self._insertQuery, adapted)
+        self._cur.commit()
         logging.info('Inserted {0} entries.'.format(c))
-        self._cur.execute('COMMIT')
 
     def __setitem__(self, key, val):
         adapted = []
@@ -64,13 +76,13 @@ class SQLiteDict(UserDict.DictMixin):
         return self._cur.fetchall()
 
 
-def _generic_adapt(obj,protocol):
+def _generic_adapt(obj, protocol):
     try:
         adapted = protocol(obj)
         if adapted == obj:
             return adapted
     except:
         pass
-    raise TypeError('%r can not be adapted to %s' %(obj,protocol))
+    raise TypeError('%r can not be adapted to %s' %(obj, protocol))
 
 
