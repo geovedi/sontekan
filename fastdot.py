@@ -1,4 +1,5 @@
 # https://gist.github.com/huyng/7969327#file-fastdot-py
+# http://www.huyng.com/posts/faster-numpy-dot-product/
 
 # Copyright (c) Huy Nguyen 2013
 # All rights reserved.
