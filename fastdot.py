@@ -1,5 +1,6 @@
 # https://gist.github.com/huyng/7969327#file-fastdot-py
-# http://www.huyng.com/posts/faster-numpy-dot-product/
+# blog post: http://www.huyng.com/posts/faster-numpy-dot-product/
+# OR use fast_dot from sklearn -- http://scikit-learn.org/stable/developers/performance.html#fast-matrix-multiplications
 
 # Copyright (c) Huy Nguyen 2013
 # All rights reserved.
