@@ -1,10 +1,16 @@
 """
-Three ways of computing the Hellinger distance between two discrete probability distributions using NumPy and SciPy.
+Three ways of computing the Hellinger distance between two discrete
+probability distributions using NumPy and SciPy.
+
 source: https://gist.github.com/larsmans/3116927
 
 Extra note:
-To anyone that finds this gist at a later date and you're getting the exception ValueError: array must not contain infs or NaNs
-Make sure that the distributions given to these functions only contain positive values. Otherwise, sqrt is going to cause you pain. Throw them through np.absolute() first if you need to.
+To anyone that finds this gist at a later date and you're getting 
+the exception ValueError: array must not contain infs or NaNs.
+
+Make sure that the distributions given to these functions only
+contain positive values. Otherwise, sqrt is going to cause you pain.
+Throw them through np.absolute() first if you need to.
 """
  
 import numpy as np
