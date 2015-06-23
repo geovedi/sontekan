@@ -2,13 +2,13 @@
 
 from __future__ import unicode_literals
 
+import regex as re
 
 def fuzzyfinder(text, collection):
     suggestions = []
-    pat = '.*?'.join(map(re.escape, text))
-    regex = re.compile('%s' % pat)
+    pat = re.compile('.*?'.join(map(re.escape, text)))
     for item in sorted(collection):
-        r = regex.search(item)
+        r = pat.search(item)
         if r:
             suggestions.append((len(r.group()), r.start(), item))
-    return (z for _, _, z in sorted(suggestions))
+    return [z for _, _, z in sorted(suggestions)]
