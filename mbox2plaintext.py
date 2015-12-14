@@ -31,6 +31,8 @@ def get_body(message):
         body = unicode(message.get_payload(decode=True), get_charset(message), 'replace')
         return body.strip()
 
+SKIP = 'helpdesk@bonjovijakarta.com'
+
 def main(mbox_file, output_dir):
     mbox = mailbox.UnixMailbox(open(mbox_file))
     counter = 0
@@ -39,12 +41,29 @@ def main(mbox_file, output_dir):
         if not msg:
             break
         output_fname = '{0}/{1}.mbox'.format(output_dir, counter)
+
+        if SKIP in msg.get('from') and SKIP in msg.get('to'):
+            continue
+
         with open(output_fname, 'w') as out:
-            for hdr in msg.headers:
-                out.write(hdr)
+            if msg.get('date'):
+                out.write('Date: {0}'.format(msg.get('date')))
+                out.write('\n')
+            if msg.get('from'):
+                out.write('From: {0}'.format(msg.get('from')))
+                out.write('\n')
+            if msg.get('to'):
+                out.write('To: {0}'.format(msg.get('to')))
+                out.write('\n')
+            if msg.get('subject'):
+                out.write('Subject: {0}'.format(msg.get('subject')))
+                out.write('\n')
+
             out.write('\n')
+
             m = email.message_from_string(''.join(msg.headers + ['\n'] + msg.fp.readlines()))
             out.write(get_body(m).encode('utf-8'))
+            out.write('\n')
 
         logging.info('Saved {0}'.format(output_fname))
         counter += 1
