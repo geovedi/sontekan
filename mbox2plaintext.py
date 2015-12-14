@@ -1,12 +1,21 @@
+
 import mailbox
 import plac
+import email
+import html2text
 import logging
 logging.basicConfig(
     format='%(asctime)s [%(process)d] [%(levelname)s] %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S',
     level=logging.INFO)
 
-import email
+html_converter = html2text.HTML2Text()
+html_converter.body_width = 0
+html_converter.ignore_links = True
+html_converter.ignore_images = True
+html_converter.ignore_emphasis = True
+html_converter.bypass_tables = False
+html_converter.single_line_break = True
 
 def get_headers(header_text, default='ascii'):
     headers = email.header.decode_header(header_text)
@@ -26,12 +35,29 @@ def get_body(message):
         for part in email.Iterators.typed_subpart_iterator(message, 'text', 'plain'):
             charset = get_charset(part, get_charset(message))
             body.append(unicode(part.get_payload(decode=True), charset, 'replace'))
-        return u'\n'.join(body).strip()
+        text = u'\n'.join(body).strip()
+        if '><' in text:
+            return html_converter.handle(text)
+        else:
+            return text
     else:
         body = unicode(message.get_payload(decode=True), get_charset(message), 'replace')
-        return body.strip()
+        if '><' in body:
+            return html_converter.handle(body)
+        else:
+            return body
 
-SKIP = 'helpdesk@bonjovijakarta.com'
+#def get_body_html(message):
+#    if message.is_multipart():
+#        body = []
+#        for part in email.Iterators.typed_subpart_iterator(message, 'text', 'html'):
+#            charset = get_charset(part, get_charset(message))
+#            body.append(unicode(part.get_payload(decode=True), charset, 'replace'))
+#        html_text = u'\n'.join(body).strip()
+#        return html_converter.handle(html_text)
+#    else:
+#        body = unicode(message.get_payload(decode=True), get_charset(message), 'replace')
+#        return html_converter.handle(body.strip())
 
 def main(mbox_file, output_dir):
     mbox = mailbox.UnixMailbox(open(mbox_file))
@@ -41,9 +67,6 @@ def main(mbox_file, output_dir):
         if not msg:
             break
         output_fname = '{0}/{1}.mbox'.format(output_dir, counter)
-
-        if SKIP in msg.get('from') and SKIP in msg.get('to'):
-            continue
 
         with open(output_fname, 'w') as out:
             if msg.get('date'):
