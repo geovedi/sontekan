@@ -14,7 +14,7 @@ def main(mbox_file, output_dir):
         msg = mbox.next()
         if not msg:
             break
-        output_fname = output_dir + '/' + str(counter) + '.mbox'
+        output_fname = '{0}/{1}.mbox'.format(output_dir, counter)
         with open(output_fname, 'w') as out:
             for hdr in msg.headers:
                 out.write(hdr)
