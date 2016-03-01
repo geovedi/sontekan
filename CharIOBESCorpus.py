@@ -12,7 +12,6 @@ class CharIOBESCorpus(object):
         return map('|'.join, zip(seq, lab))
 
     def __iter__(self):
-        sentence, rest = [], b''
         with io.open(self.fname, 'r', encoding='utf-8') as fin:
             for sentence in fin:
                 yield map(self.iob, sentence.split())[0]
