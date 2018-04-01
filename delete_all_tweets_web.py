@@ -63,4 +63,3 @@ while True:
     MAX_ID = min(statuses)
     statuses = set()
 
-Parallel(n_jobs=2)(delayed(destroy)(i) for i in statuses)
