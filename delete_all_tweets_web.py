@@ -59,7 +59,7 @@ while True:
         time.sleep(10)
         continue
 
-    Parallel(n_jobs=4)(delayed(destroy)(i) for i in statuses)
+    Parallel(n_jobs=2)(delayed(destroy)(i) for i in statuses)
     MAX_ID = min(statuses)
     statuses = set()
 
