@@ -57,6 +57,7 @@ while True:
         logging.error(e)
         RETRY += 1
         time.sleep(10)
+        continue
 
     Parallel(n_jobs=4)(delayed(destroy)(i) for i in statuses)
     MAX_ID = min(statuses)
