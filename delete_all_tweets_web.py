@@ -27,7 +27,7 @@ base_url = ('https://twitter.com/i/profiles/show/begobet/timeline/'
             'tweets?include_available_features=1&include_entities=1'
             '&max_position={0}&reset_error_state=false')
 
-MAX_ID = 102880343811571713
+MAX_ID = 62239949000409088
 RETRY = 0
 FIRST = 29486484025249792
 pat = re.compile(r'data-item-id="(\d+)"')
@@ -49,7 +49,7 @@ while True:
         statuses = pat.findall(resp.json()['items_html'])
         statuses = set(map(int, statuses))
         if FIRST in statuses:
-            statuses.pop(FIRST)
+            statuses.remove(FIRST)
         if not statuses:
             raise Exception('Empty statuses')
         RETRY = 0
