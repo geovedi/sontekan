@@ -9,26 +9,28 @@ To restore into complete timeseries data.
     df = pd.read_csv('test.csv')
     df.index = pd.DatetimeIndex(pd.to_datetime(df.t.values, unit='s'))
     df.drop(columns=['t'], inplace=True)
-    df.resample('1s').ffill()
+    df = df.q.resample('15s').ohlc().ffill
 
 '''
 
 def main(input, output):
     with open(output, 'w') as out:
         print('t,q', end='\n', file=out)
-        prev = None
+        t_prev, q_prev = None, None
         for line in open(input, 'r'):
             line = line.strip()
             if line.startswith('t,q'):
                 continue
             t, q = line.split(',')
-            if q == prev:
+            t = int(float(t))
+            if t == t_prev or q == q_prev:
                 continue
             else:
-                print(f'{line}', end='\n', file=out)
-            prev = q
+                print(f'{t},{q}', end='\n', file=out)
+            t_prev = t
+            q_prev = q
         # print last line to get timestamp
-        print(f'{line}', end='\n', file=out)
+        print(f'{t},{q}', end='\n', file=out)
 
 
 if __name__ == '__main__':
